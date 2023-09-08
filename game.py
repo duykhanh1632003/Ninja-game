@@ -1,11 +1,11 @@
 # Import các thư viện cần thiết
 import sys
-import pygame
+import pygame, random, math
 from scripts.utils import load_image, load_images, Animation
 from scripts.entities import PhysicsEntity, Player
 from scripts.tilemap import Tilemap
 from scripts.clouds import Clouds
-
+from scripts.particle import Particle
 # Định nghĩa lớp Game để quản lý trò chơi
 class Game:
     def __init__(self):
@@ -36,6 +36,8 @@ class Game:
             'player/jump': Animation(load_images('entities/player/jump')),  # Tạo animation cho trạng thái nhảy của người chơi
             'player/slide': Animation(load_images('entities/player/slide')),  # Tạo animation cho trạng thái trượt của người chơi
             'player/wall_slide': Animation(load_images('entities/player/wall_slide')),  # Tạo animation cho trạng thái trượt trên tường của người chơi
+            'particle/leaf': Animation(load_images('particles/leaf'), img_dur= 20, loop= False),
+
         }
 
         # Đám mây nền
@@ -47,6 +49,13 @@ class Game:
         # Khởi tạo bản đồ ô vuông
         self.tilemap = Tilemap(self, tile_size=16)  # Khởi tạo bản đồ ô vuông với kích thước ô vuông là 16 pixel
         self.tilemap.load('map.json')
+        self.leaf_spawners = []
+        for tree in self.tilemap.extract([('large_decor' , 2)] , keep= True):
+            self.leaf_spawners.append(pygame.Rect(4+ tree['pos'][0] , 4 +tree['pos'][1] ,23,13))
+
+        self.particles = []
+
+
         # Biến scroll để điều chỉnh sự di chuyển của camera
         self.scroll = [0, 0]  # Điều chỉnh sự di chuyển của camera
 
@@ -61,6 +70,11 @@ class Game:
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))  # Làm tròn scroll
 
+            for rect in self.leaf_spawners:
+                if random.random() * 4999 < rect.width * rect.height:
+                    pos = (rect.x + random.random() * rect.width , rect.y + random.random() * rect.height)
+                    self.particles.append(Particle(self, 'leaf', pos ,velocity=[-0.1 ,0.3] ,frame=random.randint(0,20)))
+
             # Cập nhật và vẽ đám mây
             self.clouds.update()
             self.clouds.render(self.display, offset=render_scroll)  # Vẽ đám mây trên bề mặt con
@@ -71,7 +85,13 @@ class Game:
             # Cập nhật và vẽ người chơi
             self.player.update(self.tilemap, (self.movement[1] - self.movement[0], 0))  # Cập nhật trạng thái của người chơi
             self.player.render(self.display, offset=render_scroll)  # Vẽ người chơi trên bề mặt con
-
+            for particle in self.particles.copy():
+                kill = particle.update()
+                particle.render(self.display, offset = render_scroll)
+                if particle.type == 'leaf':
+                    particle.pos[0] += math.sin(particle.animation.frame *0.035)
+                if kill:
+                    self.particles.remove(particle)
             # Xử lý sự kiện đóng cửa sổ
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # Nếu người chơi đóng cửa sổ
