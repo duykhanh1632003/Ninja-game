@@ -37,6 +37,7 @@ class Game:
             'player/slide': Animation(load_images('entities/player/slide')),  # Tạo animation cho trạng thái trượt của người chơi
             'player/wall_slide': Animation(load_images('entities/player/wall_slide')),  # Tạo animation cho trạng thái trượt trên tường của người chơi
             'particle/leaf': Animation(load_images('particles/leaf'), img_dur= 20, loop= False),
+            'particle/particle': Animation(load_images('particles/particle'), img_dur= 6, loop= False),
 
         }
 
@@ -73,7 +74,7 @@ class Game:
             for rect in self.leaf_spawners:
                 if random.random() * 4999 < rect.width * rect.height:
                     pos = (rect.x + random.random() * rect.width , rect.y + random.random() * rect.height)
-                    self.particles.append(Particle(self, 'leaf', pos ,velocity=[-0.1 ,0.3] ,frame=random.randint(0,20)))
+                    self.particles.append(Particle(self, 'particle', pos ,velocity=[-0.1 ,0.3] ,frame=random.randint(0,20)))
 
             # Cập nhật và vẽ đám mây
             self.clouds.update()
@@ -103,7 +104,9 @@ class Game:
                     if event.key == pygame.K_RIGHT:
                         self.movement[1] = True  # Khi người chơi nhấn mũi tên phải, đặt movement[1] thành True (di chuyển sang phải)
                     if event.key == pygame.K_UP:
-                        self.player.velocity[1] = -3  # Khi người chơi nhấn mũi tên lên, đặt vận tốc y của người chơi thành -3 để nhảy lên
+                        self.player.jump()  # Khi người chơi nhấn mũi tên lên, đặt vận tốc y của người chơi thành -3 để nhảy lên
+                    if event.key == pygame.K_x:
+                        self.player.dash()
                 if event.type == pygame.KEYUP:  # Nếu có sự kiện phím được thả ra
                     if event.key == pygame.K_LEFT:
                         self.movement[0] = False  # Khi người chơi thả mũi tên trái ra, đặt movement[0] thành False
